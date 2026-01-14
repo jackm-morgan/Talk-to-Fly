@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "talk-to-fly"
+version = "0.1.0"
+description = "Natural language-guided UAV control"
+authors = ["Jack Morgan <jack.morgan@durham.ac.uk>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "talk_to_fly", from = "src" }]
+include = ["src/talk_to_fly/assets/*.txt"]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+
+# Core runtime deps (keep this list tight: only what you directly use)
+openai = "^2.7.2"
+pydantic = "^2.12.0"
+python-dotenv = "^1.2.0"
+
+# UAV / comms
+pymavlink = "^2.4.49"
+dronekit = "^2.9.2"
+pyserial = "^3.5"
+
+# General utils you likely use directly
+requests = "^2.32.0"
+tqdm = "^4.67.0"
+numpy = "^2.3.0"
+
+# Optional/extra functionality (installed only when needed)
+opencv-python = { version = "^4.11.0", optional = true }
+pandas = { version = "^2.3.0", optional = true }
+matplotlib = { version = "^3.10.0", optional = true }
+plotly = { version = "^6.5.0", optional = true }
+
+# SITL / GCS tooling tends to be heavy; keep optional unless you import them in code
+dronekit-sitl = { version = "^3.3.0", optional = true }
+mavproxy = { version = "^1.8.71", optional = true }
+wxpython = { version = "^4.2.3", optional = true }
+
+[tool.poetry.extras]
+vision = ["opencv-python"]
+analysis = ["pandas", "matplotlib", "plotly"]
+sim = ["dronekit-sitl", "mavproxy", "wxpython"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+ruff = "^0.8.0"
+mypy = "^1.10.0"
+pre-commit = "^3.8.0"
+
+[tool.poetry.scripts]
+talk-to-fly = "talk_to_fly.core.app:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
