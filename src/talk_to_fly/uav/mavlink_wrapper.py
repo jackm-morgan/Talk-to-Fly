@@ -783,12 +783,7 @@ class MavlinkWrapper:
 
     def get_status(self):
         """Return a structured, human-readable description of the drone state."""
-
-
-             
-        v = self.vehicle                     
-
-                                      
+        v = self.vehicle
         if v and v.location and v.location.global_relative_frame:
             pos = {
                 "lat": v.location.global_relative_frame.lat,
@@ -797,33 +792,20 @@ class MavlinkWrapper:
             }
         else:
             pos = None
-
-                                            
         heading = None
         if v and v.attitude:
             import math
             heading = math.degrees(v.attitude.yaw)
 
-                               
         vel = None
         if v and hasattr(v, "velocity") and v.velocity is not None:
             vx, vy, vz = v.velocity
             vel = {"vx": vx, "vy": vy, "vz": vz}
-
-                   
         batt = None
         if v and v.battery:
             batt = v.battery.level
-
-                     
         mode = v.mode.name if v and v.mode else None
-
-                     
         armed = v.armed if v else None
-
-                               
-                                                   
-
         status = [
             f"- Position: {pos}",
             f"- Heading: {heading}",
@@ -832,6 +814,4 @@ class MavlinkWrapper:
             f"- Flight Mode: {mode}",
             f"- Armed: {armed}",
         ]
-                                  
-
         return "\n".join(status)

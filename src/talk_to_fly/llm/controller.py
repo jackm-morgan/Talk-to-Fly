@@ -39,7 +39,7 @@ def get_minispec(task_description, drone):
                                
                                
                                
-        def create_prompt():
+    def create_prompt():
         assets = _res_files("talk_to_fly.assets")
         prompt_plan = assets.joinpath("prompt_plan.txt").read_text(encoding="utf-8")
         minispec_syntax = assets.joinpath("minispec_syntax.txt").read_text(encoding="utf-8")
