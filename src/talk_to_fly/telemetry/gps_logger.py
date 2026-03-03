@@ -3,7 +3,7 @@ import threading
 import time
 from datetime import datetime
 from dronekit import Vehicle
-from talk_to_fly.logging.logger import get_log_filename, log_trace
+from talk_to_fly.logging.logger import get_log_filename, log_verbose
 
 class GPSLogger:
     def __init__(self, vehicle, filename=None):
@@ -18,7 +18,7 @@ class GPSLogger:
             writer.writerow(["time_s", "lat", "lon", "alt_m"])
 
     def start(self):
-        log_trace(f"[GPS LOG] Logging to {self.filename}")
+        log_verbose(f"[GPS LOG] Logging to {self.filename}")
         self._thread.start()
 
     def stop(self):

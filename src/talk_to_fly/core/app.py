@@ -2,9 +2,10 @@ from talk_to_fly.llm.controller import get_minispec
 from talk_to_fly.dsl.minispec import run_minispec
 from talk_to_fly.logging.logger import log_status, log_verbose, log_trace
 from talk_to_fly.core.bootstrap import setup_environment
+from talk_to_fly.io.speech_input import prompt_user_for_task
 
-def prompt_user_for_task():
-    return input("\n\033[1;36mEnter UAV task :> \033[0m").strip()
+#def prompt_user_for_task():
+#    return input("\n\033[1;36mEnter UAV task :> \033[0m").strip()
 
 def handle_exit(drone, args):
     if drone.vehicle.armed and not args.simulation:
@@ -20,7 +21,7 @@ def handle_exit(drone, args):
 
 def main_loop(drone, args):
     while True:
-        task = prompt_user_for_task()
+        task = prompt_user_for_task(voice=args.voice, stt=args.stt)
         print("")
         log_trace(f"[TASK] :>{task}")
 
@@ -71,7 +72,6 @@ def main_loop(drone, args):
 
 def main(argv=None) -> int:
     args, drone, gps_logger = setup_environment(argv)
-
     try:
         main_loop(drone, args)
     except KeyboardInterrupt:
@@ -81,8 +81,6 @@ def main(argv=None) -> int:
     finally:
         gps_logger.stop()
         drone.close()
-
-
     return 0
 
 if __name__ == "__main__":
