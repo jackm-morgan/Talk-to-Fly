@@ -1,0 +1,278 @@
+name: ttf_compound_full
+version: 1
+description: >
+  Full compound-command evaluation suite for Talk-to-Fly.
+  Each episode contains multiple sequential primitives, such as translation,
+  yaw, hover, or climb, but avoids higher-level geometric reasoning reserved
+  for the complex suite. Mission success is determined using telemetry-derived
+  oracle requirements matched to the current patched evaluator.
+
+defaults:
+  timeout_s: 120
+  settle_s: 2.0
+
+episodes:
+  # -----------------------------
+  # Two-step translation tasks
+  # -----------------------------
+  - id: compound_forward3_right2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, move right 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_end_dist_m: 2.4
+
+  - id: compound_forward3_left2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, move left 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_end_dist_m: 2.4
+
+  - id: compound_right3_forward2_land
+    category: compound
+    command: "Take off to 2 meters, move right 3 meters, fly forward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_end_dist_m: 2.4
+
+  - id: compound_left3_forward2_land
+    category: compound
+    command: "Take off to 2 meters, move left 3 meters, fly forward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_end_dist_m: 2.4
+
+  # -----------------------------
+  # Out-and-back / closed translation tasks
+  # -----------------------------
+  - id: compound_forward3_back3_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, fly backward 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 4.0
+      max_end_dist_m: 1.8
+
+  - id: compound_left3_right3_land
+    category: compound
+    command: "Take off to 2 meters, move left 3 meters, move right 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 4.0
+      max_end_dist_m: 1.8
+
+  - id: compound_forward2_right2_back2_left2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 2 meters, move right 2 meters, fly backward 2 meters, move left 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 5.0
+      max_end_dist_m: 2.0
+
+  - id: compound_forward3_right2_back3_left2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, move right 2 meters, fly backward 3 meters, move left 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.5
+      max_end_dist_m: 2.0
+
+  # -----------------------------
+  # Translation + yaw tasks
+  # -----------------------------
+  - id: compound_forward3_turnleft90_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, turn left 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_forward3_turnright90_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, turn right 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_turnright90_forward3_land
+    category: compound
+    command: "Take off to 2 meters, turn right 90 degrees, fly forward 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_turnleft90_forward3_land
+    category: compound
+    command: "Take off to 2 meters, turn left 90 degrees, fly forward 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_forward2_turnleft90_forward2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 2 meters, turn left 90 degrees, fly forward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.0
+      min_end_dist_m: 2.0
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_forward2_turnright90_forward2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 2 meters, turn right 90 degrees, fly forward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.0
+      min_end_dist_m: 2.0
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_forward4_turn180_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 4 meters, rotate 180 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.0
+      min_end_dist_m: 2.5
+      min_yaw_abs_deg: 130.0
+
+  - id: compound_turnright90_forward2_turnleft90_land
+    category: compound
+    command: "Take off to 2 meters, turn right 90 degrees, fly forward 2 meters, then turn left 90 degrees and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.4
+      min_end_dist_m: 1.0
+      min_yaw_abs_deg: 110.0
+
+  # -----------------------------
+  # Translation + hover tasks
+  # -----------------------------
+  - id: compound_forward5_hover5_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 5 meters, hover for 5 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 4.0
+      min_end_dist_m: 3.0
+      min_hover_s: 3.8
+    timeout_s: 130
+
+  - id: compound_right3_hover3_left3_land
+    category: compound
+    command: "Take off to 2 meters, move right 3 meters, hover for 3 seconds, move left 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 4.0
+      min_hover_s: 2.2
+      max_end_dist_m: 1.8
+    timeout_s: 130
+
+  - id: compound_hover2_forward2_hover2_land
+    category: compound
+    command: "Take off to 2 meters, hover for 2 seconds, fly forward 2 meters, hover for 2 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.4
+      min_end_dist_m: 1.0
+      min_hover_s: 3.0
+    timeout_s: 120
+
+  # -----------------------------
+  # Climb / hover compound tasks
+  # -----------------------------
+  - id: compound_takeoff2_climb4_hover3_land
+    category: compound
+    command: "Take off to 2 meters, climb to 4 meters, hover for 3 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 3.2
+      min_hover_s: 2.2
+    timeout_s: 130
+
+  - id: compound_takeoff2_climb5_hover2_land
+    category: compound
+    command: "Take off to 2 meters, climb to 5 meters, hover for 2 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 4.0
+      min_hover_s: 1.4
+    timeout_s: 140
+
+  # -----------------------------
+  # Longer chained translation task
+  # -----------------------------
+  - id: compound_forward3_back1_right2_left2_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, fly backward 1 meter, move right 2 meters, move left 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 5.0
+      min_end_dist_m: 1.2
+    timeout_s: 140
+
+  # -----------------------------
+  # Wording-variation compound tasks
+  # -----------------------------
+  - id: compound_phrase_variant_offsets_land
+    category: compound
+    command: "Take off to 2 meters, go 3 meters straight ahead, sidestep right by 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_end_dist_m: 2.4
+
+  - id: compound_phrase_variant_turn_move_land
+    category: compound
+    command: "Take off to 2 meters, rotate clockwise by 90 degrees, move 3 meters straight ahead, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_yaw_abs_deg: 60.0
+
+  - id: compound_forward3_hover3_turnright90_land
+    category: compound
+    command: "Take off to 2 meters, fly forward 3 meters, hover for 3 seconds, turn right 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+      min_hover_s: 2.2
+      min_yaw_abs_deg: 60.0
+    timeout_s: 130

@@ -1,0 +1,49 @@
+# Guidelines
+{guidelines}
+
+# Skills
+## High-level skills
+{high_level_skills}
+
+## Low-level skills (DSL forms)
+{low_level_skills}
+
+## Invocation rules
+- Use the exact abbreviation/name shown in the skill list.
+- If a skill has arguments, include them in parentheses in the correct order/type/units.
+- If a skill has no arguments, call it without parentheses.
+
+# DSL syntax
+{dsl_syntax}
+
+## Syntax notes
+- End statements with `;` where required by the grammar.
+- Use loops only in the supported loop form.
+- Use conditionals only in the supported conditional form.
+- Output must still follow the one-line output contract in `guidelines.txt`.
+
+# Constraints
+{constraints}
+
+# Examples
+{examples}
+
+# History
+Execution history lists actions already completed this mission. Use it to avoid repetition and to decide whether takeoff is required.
+{execution_history}
+
+# Current state
+Use state to decide takeoff vs continue and to interpret heading for cardinal directions.
+Assume `Heading_degrees` uses: 0=N, 90=E, 180=S, 270=W 
+{drone_status}
+
+# Conversation history
+Use recent dialogue to interpret follow-up answers and clarification replies.
+{conversation_history}
+
+# Task
+Convert the user’s natural-language task into a valid DSL plan consistent with skills, constraints, history, state, and recent conversation.
+{task_description}
+
+# Output (strict)
+Return exactly **one** line of DSL program, or use log to query the user.

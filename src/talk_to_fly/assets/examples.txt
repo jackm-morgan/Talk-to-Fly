@@ -1,0 +1,26 @@
+## Example 1:
+Task: Fly in a 2m square
+Execution History: []
+Response: tk(5);4{mf(2);tcw(90)};ld;
+
+## Example 2:
+Task: Fly 10m forwards
+Execution History: [tk(10);]
+Response: mf(10);
+
+## Example 3:
+Task: Fly 10m forwards
+Execution History: [tk(10);ld;]
+Response: tk(5);mf(10);
+
+## Example 4:
+Task: Fly 100m forwards
+Execution History: [tk(10);ld;]
+Response: tk(5);mf(100);
+
+## Example 5:
+Task: Fly 100m west
+Execution History: []
+Heading_degrees: 165
+Response: tk(5);tcw(105);mf(100);
+

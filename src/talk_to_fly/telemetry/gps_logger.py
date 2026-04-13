@@ -1,3 +1,5 @@
+"""Telemetry logging utilities for recording GPS trajectories."""
+
 import csv
 import threading
 import time

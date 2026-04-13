@@ -1,3 +1,5 @@
+"""Speech input helpers used by the interactive runtime."""
+
 
 # src/talk_to_fly/io/speech_input.py
 from __future__ import annotations

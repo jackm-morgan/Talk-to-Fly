@@ -1,0 +1,244 @@
+name: ttf_simple_full_v1
+version: 2
+description: >
+  Full simple-command evaluation suite for Talk-to-Fly.
+  Each episode tests one primary primitive only: takeoff/hover, translation,
+  yaw rotation, or vertical motion. Mission success is determined using
+  telemetry-derived oracle requirements that match the current evaluator.
+
+defaults:
+  timeout_s: 75
+  settle_s: 2.0
+
+episodes:
+  # -----------------------------
+  # Takeoff / hover / land
+  # -----------------------------
+  - id: simple_takeoff_2_hover5_land
+    category: simple
+    command: "Take off to 2 meters, hover for 5 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_hover_s: 4.0
+
+  - id: simple_takeoff_3_hover3_land
+    category: simple
+    command: "Take off to 3 meters, hover for 3 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.3
+      min_hover_s: 2.2
+
+  - id: simple_takeoff_1p5_hover5_land
+    category: simple
+    command: "Take off to 1.5 meters, hover for 5 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.1
+      min_hover_s: 4.0
+
+  - id: simple_takeoff_2_hover10_land
+    category: simple
+    command: "Take off to 2 meters, hover for 10 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_hover_s: 8.0
+    timeout_s: 90
+
+  # -----------------------------
+  # Forward / backward translation
+  # -----------------------------
+  - id: simple_forward_2_land
+    category: simple
+    command: "Take off to 2 meters, fly forward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.5
+      min_end_dist_m: 1.0
+
+  - id: simple_forward_3_land
+    category: simple
+    command: "Take off to 2 meters, fly forward 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+
+  - id: simple_forward_5_land
+    category: simple
+    command: "Take off to 2 meters, fly forward 5 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 4.0
+      min_end_dist_m: 3.0
+
+  - id: simple_backward_2_land
+    category: simple
+    command: "Take off to 2 meters, fly backward 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.5
+      min_end_dist_m: 1.0
+
+  - id: simple_backward_3_land
+    category: simple
+    command: "Take off to 2 meters, fly backward 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+
+  # -----------------------------
+  # Left / right translation
+  # -----------------------------
+  - id: simple_right_2_land
+    category: simple
+    command: "Take off to 2 meters, move right 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.5
+      min_end_dist_m: 1.0
+
+  - id: simple_right_3_land
+    category: simple
+    command: "Take off to 2 meters, move right 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+
+  - id: simple_left_2_land
+    category: simple
+    command: "Take off to 2 meters, move left 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 1.5
+      min_end_dist_m: 1.0
+
+  - id: simple_left_3_land
+    category: simple
+    command: "Take off to 2 meters, move left 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+
+  # -----------------------------
+  # Yaw / orientation
+  # -----------------------------
+  - id: simple_turn_left_90_land
+    category: simple
+    command: "Take off to 2 meters, turn left 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_yaw_abs_deg: 60.0
+
+  - id: simple_turn_right_90_land
+    category: simple
+    command: "Take off to 2 meters, turn right 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_yaw_abs_deg: 60.0
+
+  - id: simple_turn_left_180_land
+    category: simple
+    command: "Take off to 2 meters, rotate 180 degrees to the left, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_yaw_abs_deg: 130.0
+
+  - id: simple_turn_right_180_land
+    category: simple
+    command: "Take off to 2 meters, rotate 180 degrees to the right, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_yaw_abs_deg: 130.0
+
+  # -----------------------------
+  # Vertical motion
+  # NOTE:
+  # The current evaluator can validate altitude achievement robustly,
+  # but it does not yet explicitly verify an intermediate descent target.
+  # So vertical tasks are checked using altitude-based criteria only.
+  # -----------------------------
+  - id: simple_climb_to_4_land
+    category: simple
+    command: "Take off to 2 meters, climb to 4 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 3.2
+
+  - id: simple_climb_to_5_land
+    category: simple
+    command: "Take off to 2 meters, climb to 5 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 4.0
+    timeout_s: 85
+
+  - id: simple_descend_to_1_land
+    category: simple
+    command: "Take off to 3 meters, descend to 1 meter, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.3
+
+  - id: simple_descend_to_2_land
+    category: simple
+    command: "Take off to 4 meters, descend to 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 3.2
+
+  # -----------------------------
+  # Phrase-variation robustness
+  # Same primitive, different wording
+  # -----------------------------
+  - id: simple_forward_phrase_variant_land
+    category: simple
+    command: "Take off to 2 meters, move 4 meters straight ahead, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 3.0
+      min_end_dist_m: 2.2
+
+  - id: simple_right_phrase_variant_land
+    category: simple
+    command: "Take off to 2 meters, sidestep right by 3 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 2.2
+      min_end_dist_m: 1.6
+
+  - id: simple_turn_phrase_variant_land
+    category: simple
+    command: "Take off to 2 meters, rotate clockwise by 90 degrees, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_yaw_abs_deg: 60.0
+
+  - id: simple_hover_phrase_variant_land
+    category: simple
+    command: "Take off to 2 meters, hold position for 6 seconds, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_hover_s: 4.8
