@@ -1,3 +1,5 @@
+"""Structured logging helpers used across the project."""
+
 import logging
 from datetime import datetime
 import os

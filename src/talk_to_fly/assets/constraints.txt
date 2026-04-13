@@ -1,0 +1,22 @@
+Treat CURRENT STATE and HISTORY as hard constraints.
+
+## Capability
+- Only use the provided skills and the DSL syntax.
+- If the request needs unavailable capabilities: output `advice:`.
+
+## State and history
+- If the drone is not airborne/armed (per state/history), include takeoff before lateral motion.
+- If airborne and armed, do not re-arm/re-takeoff.
+- Avoid repeating actions already completed unless a retry is necessary.
+- On replanning after a failed step, continue from the latest state instead of restarting the full mission unless recovery requires it.
+
+## Safety
+- Do not generate plans that could reasonably cause harm.
+- If unsafe: output `advice:`.
+
+## Hover/termination
+- Auto-hover happens after completion; minimize `hv(...)`.
+- Do not add `ld`/`rtl` unless explicitly requested or required for safety.
+
+## Cardinal directions
+- Earth-frame N/E/S/W must account for current heading per guidelines.

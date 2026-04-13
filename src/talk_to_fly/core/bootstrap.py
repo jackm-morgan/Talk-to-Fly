@@ -1,3 +1,5 @@
+"""Argument parsing and startup helpers for the interactive runtime."""
+
 import argparse
 import logging
 from talk_to_fly.uav.mavlink_wrapper import MavlinkWrapper
@@ -40,9 +42,17 @@ def ping_openai(timeout: float = 5.0) -> bool:
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="LLM-controlled UAV")
     parser.add_argument("--connect", default="udp:127.0.0.1:14551", help="MAVLink connection string")
-    parser.add_argument("-k", "--confirm", action="store_true", help="Show MiniSpec plan and ask for confirmation")
+    parser.add_argument("-k", "--confirm", action="store_true", help="Show DSL plan and ask for confirmation")
     parser.add_argument("-s", "--simulation", action="store_true", help="Run in simulation mode")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print log messages to console")
+    parser.add_argument("--max-replans", type=int, default=2, help="Maximum number of recovery replans after a failed step")
+    parser.add_argument("--plain-ui", action="store_true", help="Disable the enhanced terminal UI panels and use a minimal prompt")
+    parser.add_argument(
+        "--architecture",
+        default="agentic",
+        choices=["agentic", "one_shot"],
+        help="Runtime architecture: agentic=stateful execution-grounded loop; one_shot=single upfront plan with no clarification/replanning/execution-grounding.",
+    )
 
     # ---- Voice / STT (optional) ----
     parser.add_argument("--voice", action="store_true", help="Use microphone speech input instead of typing")
@@ -57,6 +67,9 @@ def parse_args(argv=None):
 def setup_environment(argv=None):
     args = parse_args(argv)
     set_verbose(args.verbose)
+
+    if getattr(args, "architecture", "agentic") == "one_shot":
+        args.max_replans = 0
 
     # Initialize optional STT once; keep return signature unchanged by storing on args
     args.stt = None
@@ -90,11 +103,14 @@ def setup_environment(argv=None):
     verbose_status = "\033[1;32mON\033[0m" if args.verbose else "\033[1;31mOFF\033[0m"
     voice_status = "\033[1;32mON\033[0m" if getattr(args, "voice", False) else "\033[1;31mOFF\033[0m"
 
+    architecture = getattr(args, "architecture", "agentic")
+
     msg = (
         f"Modes: Simulation={sim_status}, "
         f"Verify={verify_status}, "
         f"Verbose={verbose_status}, "
-        f"Voice={voice_status}"
+        f"Voice={voice_status}, "
+        f"Architecture={architecture}"
     )
 
     print(f"\n{msg}\n")
@@ -104,7 +120,7 @@ def setup_environment(argv=None):
         exit(1)
 
     if args.simulation:
-        args.connect = "udp:127.0.0.1:14550"
+        args.connect = "udp:127.0.0.1:14551" # was 14550
 
     drone = MavlinkWrapper(args.connect, simulation=args.simulation)
     log_verbose(f"[INIT] Drone initialized on {args.connect} (Simulation={args.simulation})")
