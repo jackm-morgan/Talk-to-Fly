@@ -257,6 +257,7 @@ class MissionBridgeService:
             self._emit("error", "Planner returned no DSL plan.", mission=mission)
             return
 
+        self.conversation.add_assistant(dsl, kind="planner_output")
         mission.set_unexecuted_plan(dsl, source=plan_source)
 
         if getattr(self.runner, "supports_clarification", True) and review.requires_clarification:

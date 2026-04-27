@@ -1,0 +1,279 @@
+name: ttf_complex_full
+version: 1
+description: >
+  Complex-command evaluation suite for Talk-to-Fly.
+  These tasks are intended to trigger high-level planning and pattern-generation
+  behavior (e.g. square, rectangle, triangle, circle, figure-eight, orbit, search pattern),
+  plus state-aware and history-aware reasoning. ORDER-SENSITIVE: run without --shuffle.
+
+defaults:
+  timeout_s: 180
+  settle_s: 2.0
+
+episodes:
+  # ---------------------------------------------------------
+  # Independent complex geometric / high-level tasks
+  # ---------------------------------------------------------
+  - id: complex_square_2_clockwise_land
+    category: complex
+    command: "Take off to 2 meters, fly a 2 meter square clockwise, and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 2.5
+
+  - id: complex_square_3_counterclockwise_land
+    category: complex
+    command: "Fly a 3 meter square counter-clockwise and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_rectangle_4x2_clockwise_land
+    category: complex
+    command: "Take off to 3 meters, fly a rectangle 4 meters by 2 meters clockwise, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_rectangle_4x2_counterclockwise_land
+    category: complex
+    command: "From your current state, fly a rectangle 4 meters by 2 meters counter-clockwise, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_triangle_equilateral_3_land
+    category: complex
+    command: "Take off to 2 meters and fly an equilateral triangle with 3 meter sides, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.0
+      min_yaw_abs_deg: 100.0
+      max_end_dist_m: 3.0
+
+  - id: complex_diamond_2p5_land
+    category: complex
+    command: "Take off to 2 meters, fly a diamond shape with approximately 2.5 meter sides, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 7.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_circle_radius_2_land
+    category: complex
+    command: "Take off to 3 meters, fly a circle of radius about 2 meters, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_figure_eight_small_land
+    category: complex
+    command: "Take off to 3 meters, fly a small figure-eight pattern, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 10.0
+      max_end_dist_m: 3.0
+
+  - id: complex_lawnmower_three_lane_land
+    category: complex
+    command: "Take off to 3 meters, fly a short three-lane lawnmower search pattern, finish near where you started, and land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 10.0
+      max_end_dist_m: 3.0
+
+  - id: complex_orbit_takeoff_point_once_land
+    category: complex
+    command: "Take off to 3 meters, orbit your takeoff point once, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_hexagon_small_land
+    category: complex
+    command: "Take off to 3 meters, fly a small hexagon, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 7.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_two_adjacent_squares_land
+    category: complex
+    command: "Take off to 3 meters, fly two adjacent 2 meter squares as one continuous pattern, then land near your start point."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 12.0
+      min_yaw_abs_deg: 250.0
+      max_end_dist_m: 3.0
+    timeout_s: 210
+
+  # ---------------------------------------------------------
+  # Ordered history-dependent tasks
+  # Do not shuffle this suite.
+  # ---------------------------------------------------------
+  - id: complex_reference_square_2_clockwise_land
+    category: complex
+    command: "Take off to 2 meters, fly a 2 meter square clockwise, and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 2.5
+
+  - id: complex_repeat_previous_reverse_land
+    category: complex
+    command: "Repeat the previous pattern, but in the opposite direction, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 2.5
+
+  - id: complex_repeat_previous_larger_land
+    category: complex
+    command: "Repeat the previous pattern, but with 3 meter sides, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_repeat_previous_with_corner_hovers_land
+    category: complex
+    command: "Repeat the previous pattern, but pause for about 1.5 seconds at each corner, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 4.0
+      max_end_dist_m: 3.0
+    timeout_s: 220
+
+  - id: complex_mirror_previous_pattern_land
+    category: complex
+    command: "Fly the mirror image of the previous pattern and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 4.0
+      max_end_dist_m: 3.0
+    timeout_s: 220
+
+  - id: complex_repeat_two_commands_ago_reverse_land
+    category: complex
+    command: "Repeat the pattern from two commands ago, but in reverse order, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 4.0
+      max_end_dist_m: 3.0
+    timeout_s: 220
+
+  - id: complex_same_pattern_twice_land
+    category: complex
+    command: "Perform the previous pattern twice back-to-back, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 18.0
+      min_yaw_abs_deg: 300.0
+      min_hover_s: 8.0
+      max_end_dist_m: 3.5
+    timeout_s: 260
+
+  - id: complex_repeat_square_from_three_ago_land
+    category: complex
+    command: "Repeat the square pattern from three commands ago once, without the extra pauses, then land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  # ---------------------------------------------------------
+  # State-aware / implicit-takeoff / heading-aware tasks
+  # These test whether the planner reasons from current state/history.
+  # ---------------------------------------------------------
+  - id: complex_if_airborne_square_2_land
+    category: complex
+    command: "If you are already airborne, do not take off again. Otherwise, take off to 2 meters. Then fly a 2 meter square and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 2.5
+
+  - id: complex_if_airborne_circle_land
+    category: complex
+    command: "If you are already in the air, keep your current altitude. Otherwise, take off to 3 meters. Then fly a small circle and land."
+    oracle:
+      type: requirements
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_from_current_heading_rectangle_3x2_land
+    category: complex
+    command: "From your current heading, fly a 3 by 2 meter rectangle and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 7.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_repeat_previous_opposite_direction_land
+    category: complex
+    command: "Repeat the previous pattern in the opposite direction and land."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 7.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_previous_rectangle_with_corner_hovers_land
+    category: complex
+    command: "Repeat the previous rectangle, but pause for about 1 second at each corner before landing."
+    oracle:
+      type: requirements
+      min_alt_m: 1.5
+      min_path_m: 7.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 3.0
+      max_end_dist_m: 3.0
+    timeout_s: 220

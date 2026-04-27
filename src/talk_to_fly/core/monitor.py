@@ -137,44 +137,6 @@ class MissionMonitor:
             reevaluated.reason = f"{reevaluated.reason} Local recovery attempted but postcondition still not met: {recovery_note}"
         return reevaluated
 
-
-class DirectExecutionMonitor(MissionMonitor):
-    """Minimal execution monitor for one-shot planner baselines.
-
-    This monitor deliberately avoids postcondition verification and local recovery.
-    It models the common one-shot architecture where the planner emits a full plan
-    once and execution trusts wrapper-level success/failure without an execution-
-    grounded feedback loop.
-    """
-
-    def evaluate(
-        self,
-        step,
-        *,
-        raw_result: Any,
-        before_state: Dict[str, Any],
-        after_state: Dict[str, Any],
-        exception: Optional[BaseException] = None,
-    ) -> StepOutcome:
-        if exception is not None:
-            return StepOutcome(
-                success=False,
-                reason=f"Exception during execution: {exception}",
-                raw_result=raw_result,
-                before_state=before_state,
-                after_state=after_state,
-                exception=repr(exception),
-                verified=False,
-            )
-        return self._generic_outcome(
-            raw_result=raw_result,
-            before_state=before_state,
-            after_state=after_state,
-        )
-
-    def attempt_local_recovery(self, drone, step, outcome: StepOutcome) -> Optional[StepOutcome]:
-        return None
-
     # ------------------------------------------------------------------
     # Generic and utility helpers
     # ------------------------------------------------------------------
@@ -564,4 +526,43 @@ class DirectExecutionMonitor(MissionMonitor):
             return None
         if drone.rtl():
             return "rtl() retry"
+        return None
+
+
+
+class DirectExecutionMonitor(MissionMonitor):
+    """Minimal execution monitor for one-shot planner baselines.
+
+    This monitor deliberately avoids postcondition verification and local recovery.
+    It models the common one-shot architecture where the planner emits a full plan
+    once and execution trusts wrapper-level success/failure without an execution-
+    grounded feedback loop.
+    """
+
+    def evaluate(
+        self,
+        step,
+        *,
+        raw_result: Any,
+        before_state: Dict[str, Any],
+        after_state: Dict[str, Any],
+        exception: Optional[BaseException] = None,
+    ) -> StepOutcome:
+        if exception is not None:
+            return StepOutcome(
+                success=False,
+                reason=f"Exception during execution: {exception}",
+                raw_result=raw_result,
+                before_state=before_state,
+                after_state=after_state,
+                exception=repr(exception),
+                verified=False,
+            )
+        return self._generic_outcome(
+            raw_result=raw_result,
+            before_state=before_state,
+            after_state=after_state,
+        )
+
+    def attempt_local_recovery(self, drone, step, outcome: StepOutcome) -> Optional[StepOutcome]:
         return None

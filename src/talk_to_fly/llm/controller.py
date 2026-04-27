@@ -103,11 +103,39 @@ def _format_execution_history(history) -> str:
         return str(history)
 
 
-def _format_conversation_history(history) -> str:
+def _format_conversation_history(history, *, limit: int = 10) -> str:
+    """Format the most recent user/assistant messages for prompt injection."""
     try:
         if not history:
             return "[]"
-        return json.dumps(history, ensure_ascii=False, indent=2, default=str)
+
+        items = []
+        for item in history:
+            if isinstance(item, dict):
+                role = str(item.get("role", "")).strip().lower()
+                if role not in {"user", "assistant"}:
+                    continue
+                content = item.get("content")
+                if content is None:
+                    content = item.get("text")
+                if content is None:
+                    content = str(item)
+                out = {
+                    "role": role,
+                    "content": str(content),
+                }
+                kind = item.get("kind")
+                if kind is not None:
+                    out["kind"] = str(kind)
+                items.append(out)
+            else:
+                items.append({
+                    "role": "assistant",
+                    "kind": "history_seed",
+                    "content": str(item),
+                })
+
+        return json.dumps(items[-max(1, int(limit)):], ensure_ascii=False, indent=2, default=str)
     except Exception:
         return str(history)
 

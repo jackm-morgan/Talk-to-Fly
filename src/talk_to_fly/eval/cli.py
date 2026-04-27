@@ -43,11 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
     # Timeouts / thresholds
     r.add_argument("--timeout-s", type=float, default=None, help="Override per-episode timeout seconds.")
     r.add_argument("--settle-s", type=float, default=None, help="Override per-episode settle seconds.")
-    r.add_argument("--movement-speed-mps", type=float, default=0.10, help="First-action threshold (groundspeed, m/s).")
-    r.add_argument("--movement-disp-m", type=float, default=0.15, help="First-action threshold (horizontal displacement, meters).")
-    r.add_argument("--movement-alt-m", type=float, default=0.10, help="First-action threshold (altitude change, meters).")
-    r.add_argument("--movement-yaw-deg", type=float, default=5.0, help="First-action threshold (heading change, degrees).")
-    r.add_argument("--movement-hold-s", type=float, default=0.20, help="First-action hold time (seconds).")
+    r.add_argument("--movement-speed-mps", type=float, default=0.10, help="First-motion threshold when already armed (groundspeed, m/s).")
+    r.add_argument("--movement-disp-m", type=float, default=0.15, help="First-motion threshold when already armed (horizontal displacement, meters).")
+    r.add_argument("--movement-alt-m", type=float, default=0.10, help="First-motion threshold when already armed (altitude change, meters).")
+    r.add_argument("--movement-yaw-deg", type=float, default=5.0, help="First-motion threshold when already armed (heading change, degrees).")
+    r.add_argument("--movement-hold-s", type=float, default=0.20, help="Hold time for physical-motion thresholds; arming is counted immediately if the episode starts disarmed.")
 
     # Verbosity
     r.add_argument("-v", "--verbose", action="store_true", help="Verbose console logging (reuses existing logger).")
