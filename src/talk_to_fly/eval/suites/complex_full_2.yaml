@@ -1,0 +1,541 @@
+name: ttf_complex_full
+version: 3
+description: >
+  Complex-command evaluation suite for Talk-to-Fly.
+  Every episode is controlled and reproducible: each one seeds explicit execution
+  history and sets an explicit initial drone state. The tasks are designed to
+  require state-aware and history-aware planning rather than isolated one-shot
+  command translation.
+
+defaults:
+  timeout_s: 210
+  settle_s: 2.0
+  cleanup_mode: land
+
+episodes:
+  - id: complex_01_ground_prev_square_opposite
+    category: complex
+    tags: [ground_start, history_seeded, state_aware, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);sq(2);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 0
+      position_ne_m: [0.0, 0.0]
+    command: "You are on the ground now. Take off to 3 meters, repeat the previous 2 meter square in the opposite direction, and land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 2.5
+
+  - id: complex_02_air_prev_square_larger_keep_alt
+    category: complex
+    tags: [airborne_start, history_seeded, keep_altitude, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 45
+      position_ne_m: [2.0, -1.0]
+      settle_s: 1.0
+    command: "You are already airborne, so do not take off again. Repeat the previous square but make the sides 3 meters long, keep your current altitude, and land."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.4
+      max_alt_range_m: 1.2
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_03_air_prev_square_climb_and_hover
+    category: complex
+    tags: [airborne_start, history_seeded, altitude_change, hover, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 90
+      position_ne_m: [-2.0, 2.0]
+      settle_s: 1.0
+    command: "You are already airborne. Climb to 5 meters, then fly the same square as in the previous plan, pausing for about 1 second at each corner before landing. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [mu]
+      forbid_skills: [tk]
+      min_alt_m: 4.2
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 3.0
+      max_end_dist_m: 3.0
+    timeout_s: 230
+
+  - id: complex_04_ground_two_ago_rectangle_repeat
+    category: complex
+    tags: [ground_start, history_seeded, selection_from_history, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);mf(4);tcw(90);mf(2);tcw(90);mf(4);tcw(90);mf(2);ld;"
+      - "Previous command: tk(3);crc(1.5);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 30
+      position_ne_m: [1.5, 1.0]
+    command: "You are on the ground. Take off to 3 meters and repeat the rectangle from two commands ago, then land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_05_air_two_ago_rectangle_opposite_keep_alt
+    category: complex
+    tags: [airborne_start, history_seeded, selection_from_history, keep_altitude, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);mf(4);tcw(90);mf(2);tcw(90);mf(4);tcw(90);mf(2);ld;"
+      - "Previous command: tk(3);crc(1.5);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 120
+      position_ne_m: [-3.0, 1.5]
+      settle_s: 1.0
+    command: "You are already airborne. Do not take off again. Fly the rectangle from two commands ago in the opposite direction, keep your current altitude, and land."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.4
+      max_alt_range_m: 1.2
+      min_path_m: 8.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_06_ground_complete_partial_square
+    category: complex
+    tags: [ground_start, partial_history, reasoning_completion, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Partial previous execution: tk(2);mf(2);tcw(90);mf(2);"
+    initial_state:
+      mode: ground
+      heading_deg: 0
+      position_ne_m: [-1.0, -1.0]
+    command: "You are on the ground now. Take off to 2 meters and complete only the remaining two sides of that square before landing."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_yaw_abs_deg: 80.0
+      max_end_dist_m: 2.5
+
+  - id: complex_07_air_complete_partial_square
+    category: complex
+    tags: [airborne_start, partial_history, reasoning_completion, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Partial previous execution: tk(2);mf(2);tcw(90);mf(2);"
+    initial_state:
+      mode: airborne
+      altitude_m: 2.0
+      heading_deg: 180
+      position_ne_m: [3.0, -2.0]
+      settle_s: 1.0
+    command: "You are already airborne, so do not take off again. Complete only the remaining two sides of that square and then land."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 1.5
+      min_path_m: 3.5
+      min_yaw_abs_deg: 80.0
+      max_end_dist_m: 2.5
+
+  - id: complex_08_ground_prev_circle_opposite
+    category: complex
+    tags: [ground_start, history_seeded, circular_reasoning, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);crc(1.5);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 270
+      position_ne_m: [0.5, 3.0]
+    command: "You are on the ground. Take off to 3 meters, fly the same circle as before but in the opposite direction, and land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_09_air_prev_circle_descend_then_reverse
+    category: complex
+    tags: [airborne_start, history_seeded, altitude_change, circular_reasoning, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(5);crc(1.5);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 5.0
+      heading_deg: 135
+      position_ne_m: [-3.5, -0.5]
+      settle_s: 1.0
+    command: "You are already airborne. Descend to 3 meters, then fly the same 1.5 meter circle in the opposite direction and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [md]
+      forbid_skills: [tk]
+      min_alt_m: 2.5
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_10_ground_two_ago_hexagon_repeat
+    category: complex
+    tags: [ground_start, history_seeded, selection_from_history, polygon, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);6{mf(1.2);tcw(60)};ld;"
+      - "Previous command: tk(3);mf(4);tcw(90);mf(2);tcw(90);mf(4);tcw(90);mf(2);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 60
+      position_ne_m: [2.0, 2.5]
+    command: "You are on the ground. Take off to 3 meters and repeat the hexagon from two commands ago, then land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 6.5
+      min_yaw_abs_deg: 250.0
+      max_end_dist_m: 3.0
+
+  - id: complex_11_air_two_ago_hexagon_higher_opposite
+    category: complex
+    tags: [airborne_start, history_seeded, selection_from_history, altitude_change, polygon, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);6{mf(1.2);tcw(60)};ld;"
+      - "Previous command: tk(3);mf(4);tcw(90);mf(2);tcw(90);mf(4);tcw(90);mf(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 210
+      position_ne_m: [-1.5, 3.0]
+      settle_s: 1.0
+    command: "You are already airborne. Climb to 4 meters, then fly the hexagon from two commands ago in the opposite direction and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [mu]
+      forbid_skills: [tk]
+      min_alt_m: 3.4
+      min_path_m: 6.5
+      min_yaw_abs_deg: 250.0
+      max_end_dist_m: 3.0
+
+  - id: complex_12_ground_prev_lawnmower_wider
+    category: complex
+    tags: [ground_start, history_seeded, pattern_modification, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);mf(3);tcw(90);mf(1.5);tcw(90);mf(3);tccw(90);mf(1.5);tccw(90);mf(3);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 0
+      position_ne_m: [-2.0, 1.0]
+    command: "You are on the ground. Take off to 3 meters and fly the same three-lane lawnmower pattern as before, but make each long lane about 1 meter longer, then land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 11.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 4.0
+
+  - id: complex_13_air_prev_lawnmower_keep_alt_current_heading
+    category: complex
+    tags: [airborne_start, history_seeded, keep_altitude, heading_aware, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);mf(3);tcw(90);mf(1.5);tcw(90);mf(3);tccw(90);mf(1.5);tccw(90);mf(3);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.5
+      heading_deg: 315
+      position_ne_m: [3.5, 2.5]
+      settle_s: 1.0
+    command: "You are already airborne. From your current heading, fly that same three-lane lawnmower pattern, keep your current altitude, and land. Do not take off again."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.8
+      max_alt_range_m: 1.3
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 4.0
+
+  - id: complex_14_ground_two_ago_then_previous
+    category: complex
+    tags: [ground_start, history_seeded, multi_reference_history, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);sq(2);ld;"
+      - "Previous command: tk(3);crc(1.5);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 45
+      position_ne_m: [0.0, -3.0]
+    command: "You are on the ground. Take off to 3 meters, fly the shape from two commands ago, then immediately fly the shape from the previous command, and finally land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 14.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 5.0
+    timeout_s: 240
+
+  - id: complex_15_air_previous_then_two_ago_reverse
+    category: complex
+    tags: [airborne_start, history_seeded, multi_reference_history, keep_altitude, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);sq(2);ld;"
+      - "Previous command: tk(3);crc(1.5);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.5
+      heading_deg: 225
+      position_ne_m: [-3.0, 3.0]
+      settle_s: 1.0
+    command: "You are already airborne. First fly the previous shape, then fly the shape from two commands ago in the opposite direction, keep your current altitude, and land. Do not take off again."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.8
+      max_alt_range_m: 1.3
+      min_path_m: 14.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 5.0
+    timeout_s: 240
+
+  - id: complex_16_ground_use_previous_altitude_and_shape
+    category: complex
+    tags: [ground_start, history_seeded, altitude_from_history, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(4);sq(2);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 90
+      position_ne_m: [1.0, -2.5]
+    command: "You are on the ground. Take off to the same altitude used in the previous successful plan, fly that same square in the opposite direction, and land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 3.2
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_17_air_two_meters_higher_than_previous_altitude
+    category: complex
+    tags: [airborne_start, history_seeded, altitude_from_history, altitude_change, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(4);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 4.0
+      heading_deg: 135
+      position_ne_m: [2.5, 0.5]
+      settle_s: 1.0
+    command: "You are already airborne. Go two meters higher than the altitude used in the previous successful plan, then fly that square and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [mu]
+      forbid_skills: [tk]
+      min_alt_m: 5.2
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_18_air_match_previous_circle_altitude
+    category: complex
+    tags: [airborne_start, history_seeded, altitude_from_history, circular_reasoning, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(5);crc(1.5);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 30
+      position_ne_m: [-2.0, 3.5]
+      settle_s: 1.0
+    command: "You are already airborne below the altitude used previously. Climb to that same altitude, fly the same circle in the opposite direction, and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [mu]
+      forbid_skills: [tk]
+      min_alt_m: 4.2
+      min_path_m: 8.0
+      max_end_dist_m: 3.0
+
+  - id: complex_19_air_descend_to_previous_square_altitude
+    category: complex
+    tags: [airborne_start, history_seeded, altitude_from_history, altitude_change, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 5.0
+      heading_deg: 300
+      position_ne_m: [3.5, -3.5]
+      settle_s: 1.0
+    command: "You are already airborne above the altitude used in the previous successful plan. Descend to that earlier altitude, repeat the square from history, and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [md]
+      forbid_skills: [tk]
+      min_alt_m: 2.4
+      min_path_m: 6.0
+      min_yaw_abs_deg: 150.0
+      max_end_dist_m: 3.0
+
+  - id: complex_20_ground_prev_triangle_opposite
+    category: complex
+    tags: [ground_start, history_seeded, polygon, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(2.5);3{mf(3);tcw(120)};ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 180
+      position_ne_m: [-3.0, 0.0]
+    command: "You are on the ground. Take off to 2.5 meters, fly the same triangle as before but in the opposite direction, and land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 1.8
+      min_path_m: 8.0
+      min_yaw_abs_deg: 200.0
+      max_end_dist_m: 3.0
+
+  - id: complex_21_air_complete_partial_rectangle_from_history
+    category: complex
+    tags: [airborne_start, partial_history, reasoning_completion, heading_aware, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Partial previous execution: tk(3);mf(4);tcw(90);mf(2);"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.0
+      heading_deg: 180
+      position_ne_m: [1.0, 3.0]
+      settle_s: 1.0
+    command: "You are already airborne, so do not take off again. Using the 4 by 2 rectangle implied by the history, complete only the remaining two sides from your current heading and then land."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.3
+      min_path_m: 5.5
+      min_yaw_abs_deg: 80.0
+      max_end_dist_m: 3.0
+
+  - id: complex_22_ground_complete_partial_rectangle_from_history
+    category: complex
+    tags: [ground_start, partial_history, reasoning_completion, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Partial previous execution: tk(3);mf(4);tcw(90);mf(2);"
+    initial_state:
+      mode: ground
+      heading_deg: 180
+      position_ne_m: [1.0, 3.0]
+    command: "You are on the ground now. Take off to 3 meters, complete only the remaining two sides of that 4 by 2 rectangle, and land."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 5.5
+      min_yaw_abs_deg: 80.0
+      max_end_dist_m: 3.0
+
+  - id: complex_23_air_prev_square_twice_keep_alt
+    category: complex
+    tags: [airborne_start, history_seeded, repetition, keep_altitude, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(2.5);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 2.5
+      heading_deg: 15
+      position_ne_m: [-1.5, -3.0]
+      settle_s: 1.0
+    command: "You are already airborne. Keep your current altitude, fly the previous square twice back-to-back, and then land. Do not take off again."
+    oracle:
+      type: requirements
+      forbid_skills: [tk]
+      min_alt_m: 2.0
+      max_alt_range_m: 1.2
+      min_path_m: 12.0
+      min_yaw_abs_deg: 300.0
+      max_end_dist_m: 4.0
+    timeout_s: 240
+
+  - id: complex_24_ground_two_ago_square_with_corner_hovers
+    category: complex
+    tags: [ground_start, history_seeded, selection_from_history, hover, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Two commands ago: tk(3);sq(3);ld;"
+      - "Previous command: tk(3);crc(1.0);ld;"
+    initial_state:
+      mode: ground
+      heading_deg: 240
+      position_ne_m: [2.0, -2.0]
+    command: "You are on the ground. Take off to 3 meters, repeat the square from two commands ago, but pause for about 1 second at each corner before landing."
+    oracle:
+      type: requirements
+      require_skills: [tk]
+      min_alt_m: 2.2
+      min_path_m: 9.0
+      min_yaw_abs_deg: 150.0
+      min_hover_s: 3.0
+      max_end_dist_m: 3.0
+    timeout_s: 230
+
+  - id: complex_25_air_prev_square_then_reverse_one_meter_higher
+    category: complex
+    tags: [airborne_start, history_seeded, repetition, altitude_change, requires_both]
+    reset_visible_history: true
+    visible_history:
+      - "Previous successful plan: tk(3.5);sq(2);ld;"
+    initial_state:
+      mode: airborne
+      altitude_m: 3.5
+      heading_deg: 75
+      position_ne_m: [-3.5, 2.0]
+      settle_s: 1.0
+    command: "You are already airborne. Climb by 1 meter, fly the previous square once, then immediately fly it again in the opposite direction, and land. Do not take off again."
+    oracle:
+      type: requirements
+      require_skills: [mu]
+      forbid_skills: [tk]
+      min_alt_m: 4.0
+      min_path_m: 12.0
+      min_yaw_abs_deg: 300.0
+      max_end_dist_m: 4.0
+    timeout_s: 240

@@ -25,12 +25,13 @@ class PendingClarification:
 class ConversationMemory:
     """Lightweight interactive session memory.
 
-    Tracks recent natural-language turns and any unresolved clarification question
+    Tracks recent user/assistant turns and any unresolved clarification question
     so short follow-up answers (for example `5`) can be interpreted in context.
+    Only the most recent user/assistant messages are injected into planner prompts.
     """
 
-    def __init__(self, *, max_turns: int = 20):
-        self.max_turns = int(max_turns)
+    def __init__(self, *, max_turns: int = 10):
+        self.max_turns = max(1, int(max_turns))
         self.turns: List[ConversationTurn] = []
         self.pending: Optional[PendingClarification] = None
 
@@ -56,25 +57,27 @@ class ConversationMemory:
     def has_pending_clarification(self) -> bool:
         return self.pending is not None
 
-    def build_prompt_history(self) -> List[Dict[str, str]]:
+    def build_prompt_history(self, *, limit: Optional[int] = None) -> List[Dict[str, str]]:
+        """Return the last user/assistant messages for prompt injection.
+
+        The planner prompt should see only actual messages to/from the LLM, not
+        internal system notes. Pending clarification questions are already stored
+        as assistant turns by set_pending_clarification().
+        """
+        max_items = self.max_turns if limit is None else max(1, int(limit))
         items: List[Dict[str, str]] = []
-        for turn in self.turns[-self.max_turns :]:
+        for turn in self.turns:
+            role = str(turn.role).strip().lower()
+            if role not in {"user", "assistant"}:
+                continue
             items.append(
                 {
-                    "role": turn.role,
+                    "role": role,
                     "kind": turn.kind,
                     "content": turn.content,
                 }
             )
-        if self.pending is not None:
-            items.append(
-                {
-                    "role": "system",
-                    "kind": "pending_clarification",
-                    "content": f"Unresolved clarification question: {self.pending.question}",
-                }
-            )
-        return items
+        return items[-max_items:]
 
     def build_clarification_request(self, user_answer: str) -> tuple[str, Any]:
         if self.pending is None:

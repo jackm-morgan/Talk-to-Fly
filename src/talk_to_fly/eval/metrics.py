@@ -16,19 +16,21 @@ from talk_to_fly.eval.telemetry import displacement_m
 @dataclass
 class MovementResult:
     ttfm_ms: Optional[float]
-    method: str  # groundspeed|displacement|altitude|yaw|none
+    method: str  # arming|groundspeed|displacement|altitude|yaw|none
 
 
 class MovementDetector:
     """Detect the first physical UAV action after task submission.
 
     This is intentionally broader than horizontal movement:
+    - arming, when the episode starts disarmed
     - horizontal motion (groundspeed / horizontal displacement)
     - vertical motion (altitude change)
     - yaw motion (heading change)
 
-    It does NOT trigger on arm/mode changes alone. Those delays still count because
-    the timer starts before planning/execution, but they are not themselves the endpoint.
+    Arming is treated as first movement only when the vehicle was disarmed at
+    task submission. If the vehicle was already armed, the detector waits for
+    physical translation, altitude change, or yaw instead.
     """
 
     def __init__(
@@ -37,6 +39,7 @@ class MovementDetector:
         start_latlon: Tuple[Optional[float], Optional[float]],
         start_alt_m: Optional[float],
         start_heading_deg: Optional[float],
+        start_armed: Optional[bool] = None,
         speed_thresh_mps: float = 0.10,
         disp_thresh_m: float = 0.15,
         alt_thresh_m: float = 0.10,
@@ -48,6 +51,7 @@ class MovementDetector:
         self.start_latlon = start_latlon
         self.start_alt_m = start_alt_m
         self.start_heading_deg = start_heading_deg
+        self.start_armed = start_armed
         self.speed_thresh_mps = speed_thresh_mps
         self.disp_thresh_m = disp_thresh_m
         self.alt_thresh_m = alt_thresh_m
@@ -87,6 +91,18 @@ class MovementDetector:
             now = time.time()
             t0 = self._t0 or now
             dt = period
+
+            # Arming counts as first movement only if the episode started disarmed.
+            # If it started armed, continue to use actual vehicle motion.
+            armed = getattr(self.vehicle, "armed", None)
+            try:
+                armed = bool(armed) if armed is not None else None
+            except Exception:
+                armed = None
+            if self.start_armed is False and armed is True:
+                self._ttfm_s = now - t0
+                self._method = "arming"
+                break
 
             # Horizontal speed
             gs = getattr(self.vehicle, "groundspeed", None)

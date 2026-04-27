@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import csv
+import hashlib
 import json
 import math
 import random
@@ -23,6 +24,7 @@ from talk_to_fly.core.mission import Mission, _terminal_log_question
 from talk_to_fly.core.monitor import MissionMonitor, DirectExecutionMonitor
 
 R_EARTH_M = 6371000.0
+PROMPT_CONVERSATION_LIMIT = 10
 
 
 def _now_stamp() -> str:
@@ -66,6 +68,14 @@ def _safe_heading(vehicle) -> Optional[float]:
     hdg = getattr(vehicle, "heading", None)
     try:
         return float(hdg) if hdg is not None else None
+    except Exception:
+        return None
+
+
+def _safe_armed(vehicle) -> Optional[bool]:
+    armed = getattr(vehicle, "armed", None)
+    try:
+        return bool(armed) if armed is not None else None
     except Exception:
         return None
 
@@ -152,6 +162,103 @@ def _normalise_visible_history(seed_items: List[Any]) -> List[Dict[str, Any]]:
         else:
             out.append({"source": "seed", "value": repr(item)})
     return out
+
+
+def _message_content_from_seed(item: Any) -> str:
+    if isinstance(item, dict):
+        for key in ("content", "text", "message", "dsl", "plan", "command"):
+            value = item.get(key)
+            if value is not None and str(value).strip():
+                return str(value)
+        try:
+            return json.dumps(item, ensure_ascii=False, default=str)
+        except Exception:
+            return str(item)
+    return str(item)
+
+
+def _normalise_conversation_history(seed_items: List[Any]) -> List[Dict[str, str]]:
+    """Convert suite-provided history seeds into prompt-visible LLM messages."""
+    out: List[Dict[str, str]] = []
+    for item in seed_items:
+        role = "assistant"
+        kind = "history_seed"
+        if isinstance(item, dict):
+            raw_role = str(item.get("role", "")).strip().lower()
+            if raw_role in {"user", "assistant"}:
+                role = raw_role
+            if item.get("kind") is not None:
+                kind = str(item.get("kind"))
+        content = _message_content_from_seed(item).strip()
+        if content:
+            out.append({"role": role, "kind": kind, "content": content})
+    return out
+
+
+def _trim_conversation_history(
+    history: Optional[List[Any]],
+    *,
+    limit: int = PROMPT_CONVERSATION_LIMIT,
+) -> List[Dict[str, str]]:
+    """Keep only the most recent user/assistant messages for planner prompts."""
+    normalised: List[Dict[str, str]] = []
+    for item in list(history or []):
+        if isinstance(item, dict):
+            role = str(item.get("role", "")).strip().lower()
+            if role not in {"user", "assistant"}:
+                continue
+            content = item.get("content")
+            if content is None:
+                content = item.get("text")
+            if content is None or not str(content).strip():
+                continue
+            normalised.append(
+                {
+                    "role": role,
+                    "kind": str(item.get("kind", "message")),
+                    "content": str(content),
+                }
+            )
+        elif str(item).strip():
+            normalised.append(
+                {
+                    "role": "assistant",
+                    "kind": "history_seed",
+                    "content": str(item),
+                }
+            )
+    return normalised[-max(1, int(limit)):]
+
+
+def _append_conversation_message(
+    history: Optional[List[Any]],
+    role: str,
+    content: str,
+    *,
+    kind: str,
+) -> List[Dict[str, str]]:
+    role = str(role).strip().lower()
+    if role not in {"user", "assistant"}:
+        raise ValueError("Conversation role must be 'user' or 'assistant'.")
+    base = _trim_conversation_history(history)
+    if str(content).strip():
+        base.append({"role": role, "kind": kind, "content": str(content)})
+    return _trim_conversation_history(base)
+
+
+def _build_episode_conversation_history(ep: EpisodeSpec, carried_history: List[Any]) -> List[Dict[str, str]]:
+    base: List[Any] = [] if ep.reset_visible_history else _trim_conversation_history(carried_history)
+    if ep.visible_history:
+        base.extend(_normalise_conversation_history(ep.visible_history))
+    return _trim_conversation_history(base)
+
+
+def _conversation_digest(history: Optional[List[Any]]) -> str:
+    trimmed = _trim_conversation_history(history)
+    if not trimmed:
+        return "none"
+    payload = json.dumps(trimmed, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
 
 def _build_episode_visible_history(ep: EpisodeSpec, carried_history: List[Any]) -> List[Any]:
@@ -345,12 +452,22 @@ def _one_shot_enabled(args) -> bool:
     return _ablation_mode(args) == "one_shot"
 
 
-def _compute_llm_key_for_plan(*, task_text: str, suite_name: str, episode_id: str, category: str, ablation: str, plan_source: str) -> str:
+def _compute_llm_key_for_plan(
+    *,
+    task_text: str,
+    suite_name: str,
+    episode_id: str,
+    category: str,
+    ablation: str,
+    plan_source: str,
+    conversation_history: Optional[List[Any]] = None,
+) -> str:
+    history_digest = _conversation_digest(conversation_history)
     return compute_key(
         task_text,
         category=category,
         suite=f"{suite_name}|{ablation}|{plan_source}",
-        episode_id=f"{episode_id}|{plan_source}|{ablation}",
+        episode_id=f"{episode_id}|{plan_source}|{ablation}|history={history_digest}",
     )
 
 
@@ -364,8 +481,10 @@ def _plan_with_cache(
     drone: MavlinkWrapper,
     mission: Mission,
     plan_source: str,
+    conversation_history: Optional[List[Any]] = None,
 ) -> Tuple[str, Dict[str, Optional[float]]]:
     use_context = _planner_context_enabled(args)
+    prompt_conversation_history = _trim_conversation_history(conversation_history) if use_context else []
     llm_key = _compute_llm_key_for_plan(
         task_text=task_text,
         suite_name=suite_name,
@@ -373,10 +492,17 @@ def _plan_with_cache(
         category=ep.category,
         ablation=_ablation_mode(args),
         plan_source=plan_source,
+        conversation_history=prompt_conversation_history,
+    )
+    legacy_llm_key = compute_key(
+        task_text,
+        category=ep.category,
+        suite=f"{suite_name}|{_ablation_mode(args)}|{plan_source}",
+        episode_id=f"{ep.id}|{plan_source}|{_ablation_mode(args)}",
     )
 
     if args.llm == "replay":
-        cached = llm_cache.get(llm_key)
+        cached = llm_cache.get(llm_key) or llm_cache.get(legacy_llm_key)
         if cached is None:
             raise RuntimeError(f"LLM cache miss for episode '{ep.id}' plan_source='{plan_source}' (replay mode)")
         return cached.dsl, {
@@ -398,7 +524,7 @@ def _plan_with_cache(
         current_status=(mission.last_state if use_context else {}),
         mission_context=(mission.mission_context() if use_context else None),
         planning_mode=(plan_source if use_context else None),
-        conversation_history=[],
+        conversation_history=prompt_conversation_history,
     )
 
     if args.llm == "record":
@@ -410,6 +536,8 @@ def _plan_with_cache(
             "category": ep.category,
             "plan_source": plan_source,
             "ablation": _ablation_mode(args),
+            "conversation_history_digest": _conversation_digest(prompt_conversation_history),
+            "conversation_history": prompt_conversation_history,
         })
 
     return dsl, {
@@ -427,6 +555,7 @@ def _execute_agentic_episode(
     suite_name: str,
     ep: EpisodeSpec,
     llm_cache: LLMCache,
+    conversation_history: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     mission = Mission.create(ep.command, max_replans=(0 if _one_shot_enabled(args) else int(getattr(args, "max_replans", 2))))
     monitor = DirectExecutionMonitor() if _one_shot_enabled(args) else MissionMonitor()
@@ -434,6 +563,7 @@ def _execute_agentic_episode(
 
     current_request = ep.command
     plan_source = "initial"
+    local_conversation_history = _trim_conversation_history(conversation_history)
 
     generated_plans: List[Dict[str, Any]] = []
     unknown_skills: List[str] = []
@@ -444,6 +574,12 @@ def _execute_agentic_episode(
     cached_plan_total_ms: float = 0.0
 
     while True:
+        prompt_conversation_history = _append_conversation_message(
+            local_conversation_history,
+            "user",
+            current_request,
+            kind="planner_request",
+        )
         dsl, timing = _plan_with_cache(
             args=args,
             llm_cache=llm_cache,
@@ -453,6 +589,13 @@ def _execute_agentic_episode(
             drone=drone,
             mission=mission,
             plan_source=plan_source,
+            conversation_history=prompt_conversation_history,
+        )
+        local_conversation_history = _append_conversation_message(
+            prompt_conversation_history,
+            "assistant",
+            dsl,
+            kind="planner_output",
         )
 
         if ttft_ms is None and timing.get("ttft_ms") is not None:
@@ -474,6 +617,8 @@ def _execute_agentic_episode(
             "request": current_request,
             "dsl": dsl,
             "unknown_skills": current_unknowns,
+            "prompt_conversation_history": prompt_conversation_history,
+            "conversation_history_after_plan": local_conversation_history,
         })
 
         if not dsl.strip():
@@ -487,6 +632,7 @@ def _execute_agentic_episode(
                 "mission": mission,
                 "dsl": dsl,
                 "generated_plans": generated_plans,
+                "conversation_history": local_conversation_history,
                 "ttft_ms": ttft_ms,
                 "cached_ttft_ms": cached_ttft_ms,
                 "plan_total_ms": plan_total_ms,
@@ -508,6 +654,7 @@ def _execute_agentic_episode(
                 "mission": mission,
                 "dsl": dsl,
                 "generated_plans": generated_plans,
+                "conversation_history": local_conversation_history,
                 "ttft_ms": ttft_ms,
                 "cached_ttft_ms": cached_ttft_ms,
                 "plan_total_ms": plan_total_ms,
@@ -553,6 +700,7 @@ def _execute_agentic_episode(
                 "mission": mission,
                 "dsl": dsl,
                 "generated_plans": generated_plans,
+                "conversation_history": local_conversation_history,
                 "ttft_ms": ttft_ms,
                 "cached_ttft_ms": cached_ttft_ms,
                 "plan_total_ms": plan_total_ms,
@@ -586,6 +734,7 @@ def _execute_agentic_episode(
                     "mission": mission,
                     "dsl": dsl,
                     "generated_plans": generated_plans,
+                    "conversation_history": local_conversation_history,
                     "ttft_ms": ttft_ms,
                     "cached_ttft_ms": cached_ttft_ms,
                     "plan_total_ms": plan_total_ms,
@@ -601,6 +750,7 @@ def _execute_agentic_episode(
                 "mission": mission,
                 "dsl": dsl,
                 "generated_plans": generated_plans,
+                "conversation_history": local_conversation_history,
                 "ttft_ms": ttft_ms,
                 "cached_ttft_ms": cached_ttft_ms,
                 "plan_total_ms": plan_total_ms,
@@ -618,6 +768,7 @@ def _execute_agentic_episode(
                 "mission": mission,
                 "dsl": dsl,
                 "generated_plans": generated_plans,
+                "conversation_history": local_conversation_history,
                 "ttft_ms": ttft_ms,
                 "cached_ttft_ms": cached_ttft_ms,
                 "plan_total_ms": plan_total_ms,
@@ -681,6 +832,8 @@ def run_suite(args) -> None:
         "max_replans": int(getattr(args, "max_replans", 2)),
         "run_origin_latlon": list(run_origin) if run_origin else None,
         "movement": {
+            "definition": "TTFM is measured from task submission to arming if the episode starts disarmed; otherwise to first physical motion.",
+            "arming_counts_if_initially_disarmed": True,
             "speed_thresh_mps": args.movement_speed_mps,
             "disp_thresh_m": args.movement_disp_m,
             "alt_thresh_m": args.movement_alt_m,
@@ -695,6 +848,7 @@ def run_suite(args) -> None:
 
     history_state: Dict[str, Any] = {
         "visible_history": [],
+        "conversation_history": [],
         "run_origin_latlon": run_origin,
     }
 
@@ -766,6 +920,10 @@ def _run_episode(
     settle_s = float(args.settle_s) if args.settle_s is not None else float(ep.settle_s)
 
     desired_visible_history = _build_episode_visible_history(ep, history_state.get("visible_history", []))
+    desired_conversation_history = _build_episode_conversation_history(
+        ep,
+        history_state.get("conversation_history", []),
+    )
     setup_info = _apply_initial_state(
         drone=drone,
         initial_state=ep.initial_state,
@@ -779,6 +937,12 @@ def _run_episode(
     telemetry = TelemetryRecorder(drone.vehicle, ep_folder / "telemetry.csv", rate_hz=10.0)
     telemetry.start()
 
+    initial_prompt_conversation_history = _append_conversation_message(
+        desired_conversation_history,
+        "user",
+        ep.command,
+        kind="planner_request",
+    )
     llm_key = _compute_llm_key_for_plan(
         task_text=ep.command,
         suite_name=suite_name,
@@ -786,6 +950,7 @@ def _run_episode(
         category=ep.category,
         ablation=_ablation_mode(args),
         plan_source="initial",
+        conversation_history=initial_prompt_conversation_history,
     )
 
     dsl = ""
@@ -802,12 +967,14 @@ def _run_episode(
     start_latlon = _safe_latlon(drone.vehicle)
     start_alt = _safe_alt(drone.vehicle)
     start_heading = _safe_heading(drone.vehicle)
+    start_armed = _safe_armed(drone.vehicle)
 
     mover = MovementDetector(
         drone.vehicle,
         start_latlon=start_latlon,
         start_alt_m=start_alt,
         start_heading_deg=start_heading,
+        start_armed=start_armed,
         speed_thresh_mps=float(args.movement_speed_mps),
         disp_thresh_m=float(args.movement_disp_m),
         alt_thresh_m=float(args.movement_alt_m),
@@ -829,6 +996,7 @@ def _run_episode(
                 suite_name=suite_name,
                 ep=ep,
                 llm_cache=llm_cache,
+                conversation_history=desired_conversation_history,
             )
         )
 
@@ -862,7 +1030,11 @@ def _run_episode(
         (ep_folder / "dsl.txt").write_text(dsl, encoding="utf-8")
 
     post_exec_visible_history = _copy_history(drone.hist)
+    post_exec_conversation_history = _trim_conversation_history(
+        mission_run.get("conversation_history") or desired_conversation_history
+    )
     history_state["visible_history"] = _copy_history(post_exec_visible_history)
+    history_state["conversation_history"] = _copy_history(post_exec_conversation_history)
 
     cleanup_ok = True
     try:
@@ -930,6 +1102,9 @@ def _run_episode(
         "setup": setup_info,
         "visible_history_seed": desired_visible_history,
         "visible_history_after_execution": post_exec_visible_history,
+        "conversation_history_seed": desired_conversation_history,
+        "conversation_history_after_execution": post_exec_conversation_history,
+        "conversation_history_digest": _conversation_digest(post_exec_conversation_history),
         "llm_mode": args.llm,
         "llm_key": llm_key,
         "ablation": _ablation_mode(args),

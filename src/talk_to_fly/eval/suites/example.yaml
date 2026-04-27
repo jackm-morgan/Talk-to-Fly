@@ -1,0 +1,16 @@
+name: ttf_eval_example
+defaults:
+  timeout_s: 90
+  settle_s: 2.0
+episodes:
+  - id: simple_forward_5
+    category: simple
+    command: "Fly forward 5 meters and land."
+
+  - id: compound_offsets
+    category: compound
+    command: "Take off to 3m, fly forward 5m, right 2m, back 5m, left 2m, land."
+
+  - id: complex_square_2
+    category: complex
+    command: "Fly in a 2 meter square and land."
